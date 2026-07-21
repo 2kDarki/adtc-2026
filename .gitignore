@@ -1,3 +1,6 @@
+# Miscellaneous
+.tmp/
+
 # Model weights — never commit these to git
 model/*.gguf
 model/*.bin
