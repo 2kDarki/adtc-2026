@@ -1,0 +1,26 @@
+{
+  "name": "your-suite-id-v1",
+  "domain": "your-suite-id",
+  "version": "1.0.0",
+  "description": "Replace with your suite description.",
+  "items": [
+    {
+      "id": "your-suite-id-category-001",
+      "category": "category1",
+      "subcategory": "optional-subcategory",
+      "difficulty": "easy",
+      "question": "Your question here.",
+      "expected_answer": "Your expected answer here.",
+      "rubric": [
+        {"criterion": "First scoring criterion", "weight": 0.5, "required": true},
+        {"criterion": "Second scoring criterion", "weight": 0.3},
+        {"criterion": "Third scoring criterion", "weight": 0.2}
+      ],
+      "tags": ["tag1", "tag2"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

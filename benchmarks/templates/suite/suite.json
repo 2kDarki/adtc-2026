@@ -1,0 +1,14 @@
+{
+  "id": "your-suite-id",
+  "name": "Your Suite Name",
+  "version": "1.0.0",
+  "description": "Brief description of what this suite evaluates.",
+  "languages": ["en"],
+  "categories": ["category1", "category2", "category3"],
+  "maintainers": [
+    {"name": "Your Name", "email": "you@example.com"}
+  ],
+  "dependencies": [],
+  "min_framework_version": "0.2.0",
+  "tags": ["example", "template"]
+}

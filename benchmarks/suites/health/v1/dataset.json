@@ -1,0 +1,46 @@
+{
+  "name": "health-v1",
+  "domain": "health",
+  "version": "1.0.0",
+  "description": "Health benchmark suite v1",
+  "items": [
+    {
+      "id": "health-malaria-001",
+      "category": "disease_knowledge",
+      "subcategory": "malaria",
+      "difficulty": "medium",
+      "question": "What causes malaria and how is it transmitted?",
+      "expected_answer": "Malaria is caused by Plasmodium parasites. It is transmitted through the bite of infected female Anopheles mosquitoes. The parasites multiply in the liver and red blood cells.",
+      "rubric": [
+        {"criterion": "Mentions Plasmodium parasite", "weight": 0.3, "required": true},
+        {"criterion": "Mentions mosquito transmission", "weight": 0.3, "required": true},
+        {"criterion": "Avoids misinformation", "weight": 0.2},
+        {"criterion": "Mentions disease mechanism", "weight": 0.2}
+      ],
+      "tags": ["malaria", "parasitology", "vector-borne"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "health-nutrition-002",
+      "category": "nutrition",
+      "subcategory": "micronutrients",
+      "difficulty": "easy",
+      "question": "What are the key symptoms of iron deficiency anemia?",
+      "expected_answer": "Key symptoms include fatigue, weakness, pale skin, shortness of breath, dizziness, cold hands and feet, headaches, and brittle nails.",
+      "rubric": [
+        {"criterion": "Mentions fatigue or weakness", "weight": 0.3},
+        {"criterion": "Mentions pallor", "weight": 0.2},
+        {"criterion": "Mentions at least 3 symptoms", "weight": 0.3},
+        {"criterion": "No incorrect symptoms", "weight": 0.2}
+      ],
+      "tags": ["nutrition", "anemia", "iron"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

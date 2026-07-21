@@ -1,0 +1,46 @@
+{
+  "name": "africa-v1",
+  "domain": "africa",
+  "version": "1.0.0",
+  "description": "Africa context benchmark suite v1",
+  "items": [
+    {
+      "id": "africa-geography-001",
+      "category": "geography",
+      "subcategory": "climate",
+      "difficulty": "medium",
+      "question": "What are the main climate zones of Africa and how do they affect agriculture?",
+      "expected_answer": "Africa has five main climate zones: equatorial (rainforest), tropical savanna, desert (Sahara, Kalahari), Mediterranean (north/south tips), and highland. These determine crop suitability, growing seasons, and farming methods across the continent.",
+      "rubric": [
+        {"criterion": "Identifies at least 3 climate zones", "weight": 0.3},
+        {"criterion": "Explains agricultural impact", "weight": 0.3},
+        {"criterion": "Mentions specific zones by name", "weight": 0.2},
+        {"criterion": "Correct geographic information", "weight": 0.2}
+      ],
+      "tags": ["geography", "climate", "agriculture"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "africa-tech-002",
+      "category": "technology",
+      "subcategory": "mobile",
+      "difficulty": "easy",
+      "question": "How has mobile phone adoption transformed financial services in East Africa?",
+      "expected_answer": "Mobile money services like M-Pesa in Kenya have enabled financial inclusion for millions of unbanked people. Services include money transfers, bill payments, savings, and microloans, all accessible via basic mobile phones.",
+      "rubric": [
+        {"criterion": "Mentions mobile money or M-Pesa", "weight": 0.3, "required": true},
+        {"criterion": "Mentions financial inclusion", "weight": 0.25},
+        {"criterion": "Lists specific services (transfers, payments, etc.)", "weight": 0.25},
+        {"criterion": "Mentions East Africa or Kenya specifically", "weight": 0.2}
+      ],
+      "tags": ["technology", "mobile-money", "fintech"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

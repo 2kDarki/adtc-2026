@@ -1,0 +1,12 @@
+{
+  "id": "reasoning",
+  "name": "Reasoning Benchmark",
+  "version": "1.0.0",
+  "description": "Evaluates logical reasoning, pattern recognition, and deductive thinking.",
+  "languages": ["en"],
+  "categories": ["logic", "pattern_recognition", "deduction", "analogy", "mathematical_reasoning"],
+  "maintainers": [
+    {"name": "ADTC Team", "email": "team@adtc.africa"}
+  ],
+  "tags": ["reasoning", "logic", "cognitive"]
+}

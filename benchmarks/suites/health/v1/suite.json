@@ -1,0 +1,12 @@
+{
+  "id": "health",
+  "name": "Health Benchmark",
+  "version": "1.0.0",
+  "description": "Evaluates medical knowledge, public health awareness, and healthcare guidance.",
+  "languages": ["en"],
+  "categories": ["disease_knowledge", "nutrition", "public_health", "first_aid", "mental_health"],
+  "maintainers": [
+    {"name": "ADTC Team", "email": "team@adtc.africa"}
+  ],
+  "tags": ["health", "medical", "public-health"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "coding",
+  "name": "Coding Benchmark",
+  "version": "1.0.0",
+  "description": "Evaluates programming skills across algorithms, data structures, debugging, and code quality.",
+  "languages": ["en"],
+  "categories": ["algorithms", "data_structures", "debugging", "code_quality", "system_design"],
+  "maintainers": [
+    {"name": "ADTC Team", "email": "team@adtc.africa"}
+  ],
+  "tags": ["coding", "programming", "software-engineering"]
+}

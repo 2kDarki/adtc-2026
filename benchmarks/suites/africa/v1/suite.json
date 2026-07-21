@@ -1,0 +1,12 @@
+{
+  "id": "africa",
+  "name": "Africa Context Benchmark",
+  "version": "1.0.0",
+  "description": "Evaluates understanding of African contexts, development challenges, and local knowledge systems.",
+  "languages": ["en", "fr", "sw"],
+  "categories": ["geography", "economics", "culture", "development", "technology"],
+  "maintainers": [
+    {"name": "ADTC Team", "email": "team@adtc.africa"}
+  ],
+  "tags": ["africa", "development", "context-aware"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "agriculture",
+  "name": "Agriculture Benchmark",
+  "version": "1.0.0",
+  "description": "Evaluates knowledge of farming, soil science, water management, and crop production.",
+  "languages": ["en"],
+  "categories": ["soil_science", "water_management", "crop_production", "pest_management", "livestock"],
+  "maintainers": [
+    {"name": "ADTC Team", "email": "team@adtc.africa"}
+  ],
+  "tags": ["agriculture", "farming", "food-security"]
+}

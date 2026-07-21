@@ -1,0 +1,47 @@
+{
+  "name": "agriculture-v1",
+  "domain": "agriculture",
+  "version": "1.0.0",
+  "description": "Agriculture benchmark suite v1",
+  "items": [
+    {
+      "id": "agri-soil-001",
+      "category": "soil_science",
+      "subcategory": "soil_health",
+      "difficulty": "medium",
+      "question": "What are the main indicators of healthy soil for crop production?",
+      "expected_answer": "Main indicators include: dark color (organic matter), crumbly structure (good tilth), earthy smell (microbial activity), pH between 6.0-7.0, adequate drainage, presence of earthworms, and organic matter content above 3%.",
+      "rubric": [
+        {"criterion": "Mentions organic matter content", "weight": 0.25},
+        {"criterion": "Mentions soil structure or tilth", "weight": 0.2},
+        {"criterion": "Mentions pH or chemical properties", "weight": 0.2},
+        {"criterion": "Mentions biological indicators", "weight": 0.2},
+        {"criterion": "Mentions at least 4 indicators total", "weight": 0.15}
+      ],
+      "tags": ["soil", "health", "indicators"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "agri-irrigation-002",
+      "category": "water_management",
+      "subcategory": "irrigation",
+      "difficulty": "easy",
+      "question": "What are the advantages of drip irrigation over flood irrigation?",
+      "expected_answer": "Drip irrigation uses 30-50% less water, delivers water directly to root zones, minimizes weed growth, allows precise nutrient delivery, reduces soil erosion, and works on sloped terrain.",
+      "rubric": [
+        {"criterion": "Mentions water efficiency", "weight": 0.3},
+        {"criterion": "Mentions targeted delivery", "weight": 0.25},
+        {"criterion": "Mentions at least 3 advantages", "weight": 0.25},
+        {"criterion": "Does not include incorrect advantages", "weight": 0.2}
+      ],
+      "tags": ["irrigation", "water", "efficiency"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

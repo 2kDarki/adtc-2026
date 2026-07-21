@@ -1,0 +1,63 @@
+{
+  "name": "reasoning-v1",
+  "domain": "reasoning",
+  "version": "1.0.0",
+  "description": "Reasoning benchmark suite v1",
+  "items": [
+    {
+      "id": "reasoning-logic-001",
+      "category": "logic",
+      "subcategory": "syllogism",
+      "difficulty": "easy",
+      "question": "All cats are animals. All animals need food. Therefore, cats need food. Is this reasoning valid?",
+      "expected_answer": "Yes, this is a valid syllogism. The conclusion follows necessarily from the premises: if all cats are animals and all animals need food, then cats must need food.",
+      "rubric": [
+        {"criterion": "Identifies the reasoning as valid", "weight": 0.4, "required": true},
+        {"criterion": "Explains the syllogistic structure", "weight": 0.3},
+        {"criterion": "Shows the logical chain (cats -> animals -> food)", "weight": 0.3}
+      ],
+      "tags": ["syllogism", "valid-reasoning"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "reasoning-pattern-002",
+      "category": "pattern_recognition",
+      "subcategory": "sequence",
+      "difficulty": "medium",
+      "question": "What comes next in the sequence: 2, 6, 12, 20, 30, ?",
+      "expected_answer": "42. The pattern is n(n+1): 1*2=2, 2*3=6, 3*4=12, 4*5=20, 5*6=30, 6*7=42.",
+      "rubric": [
+        {"criterion": "Correct answer is 42", "weight": 0.3, "required": true},
+        {"criterion": "Identifies the pattern n(n+1)", "weight": 0.4},
+        {"criterion": "Shows multiple steps of the pattern", "weight": 0.3}
+      ],
+      "tags": ["sequence", "pattern"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "reasoning-deduction-003",
+      "category": "deduction",
+      "subcategory": "constraint",
+      "difficulty": "hard",
+      "question": "Three friends — Aisha, Bola, and Chidi — each wear a different colored shirt (red, blue, green). Aisha does not wear red. Bola wears blue. What color does Chidi wear?",
+      "expected_answer": "Chidi wears red. Since Bola wears blue, and Aisha does not wear red, Aisha must wear green. That leaves red for Chidi.",
+      "rubric": [
+        {"criterion": "Correct answer: Chidi wears red", "weight": 0.3, "required": true},
+        {"criterion": "Uses constraint elimination", "weight": 0.3},
+        {"criterion": "Identifies Aisha wears green", "weight": 0.2},
+        {"criterion": "Shows step-by-step deduction", "weight": 0.2}
+      ],
+      "tags": ["constraint", "deduction"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}
