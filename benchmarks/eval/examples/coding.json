@@ -1,0 +1,67 @@
+{
+  "name": "coding-assistants-example",
+  "domain": "coding_assistants",
+  "version": "0.1.0",
+  "description": "Small example dataset for coding assistant evaluation.",
+  "created_at": "2026-07-21T00:00:00Z",
+  "items": [
+    {
+      "id": "coding-algorithms-001",
+      "category": "algorithms",
+      "subcategory": "sorting",
+      "difficulty": "easy",
+      "question": "Write a Python function that implements bubble sort and returns the sorted list.",
+      "expected_answer": "def bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n    return arr",
+      "rubric": [
+        {"criterion": "Function is named bubble_sort", "weight": 0.2},
+        {"criterion": "Uses nested loops for comparison", "weight": 0.3},
+        {"criterion": "Correctly swaps adjacent elements", "weight": 0.3},
+        {"criterion": "Returns the sorted list", "weight": 0.2}
+      ],
+      "tags": ["sorting", "python", "algorithms"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "coding-data-structures-002",
+      "category": "data_structures",
+      "subcategory": "linked_list",
+      "difficulty": "medium",
+      "question": "Implement a singly linked list in Python with insert_at_end and delete_by_value methods.",
+      "expected_answer": "class Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\nclass LinkedList:\n    def __init__(self):\n        self.head = None\n    def insert_at_end(self, data):\n        new = Node(data)\n        if not self.head:\n            self.head = new\n            return\n        curr = self.head\n        while curr.next:\n            curr = curr.next\n        curr.next = new\n    def delete_by_value(self, val):\n        if not self.head:\n            return\n        if self.head.data == val:\n            self.head = self.head.next\n            return\n        curr = self.head\n        while curr.next:\n            if curr.next.data == val:\n                curr.next = curr.next.next\n                return\n            curr = curr.next",
+      "rubric": [
+        {"criterion": "Defines Node class with data and next", "weight": 0.2},
+        {"criterion": "Defines LinkedList class with head", "weight": 0.2},
+        {"criterion": "insert_at_end handles empty list", "weight": 0.2},
+        {"criterion": "insert_at_end traverses to tail", "weight": 0.2},
+        {"criterion": "delete_by_value handles head deletion", "weight": 0.1},
+        {"criterion": "delete_by_value handles middle/tail deletion", "weight": 0.1}
+      ],
+      "tags": ["linked-list", "python", "data-structures"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "coding-debugging-003",
+      "category": "debugging",
+      "subcategory": "off-by-one",
+      "difficulty": "easy",
+      "question": "The following Python function should return the sum of even numbers from 1 to n. Find and fix the bug.\n\ndef sum_evens(n):\n    total = 0\n    for i in range(1, n):\n        if i % 2 == 0:\n            total += i\n    return total",
+      "expected_answer": "The bug is in the range: range(1, n) excludes n. If n itself is even, it should be included. Fix: range(1, n + 1). Also, the function works correctly for the described behavior (sum of evens from 1 to n-1), but if the intent is to include n, use range(1, n + 1).",
+      "rubric": [
+        {"criterion": "Identifies the range issue (off-by-one)", "weight": 0.5},
+        {"criterion": "Provides corrected code with range(1, n+1)", "weight": 0.3},
+        {"criterion": "Explains why the original was wrong", "weight": 0.2}
+      ],
+      "tags": ["debugging", "off-by-one", "python"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

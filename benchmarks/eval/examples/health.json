@@ -1,0 +1,47 @@
+{
+  "name": "health-assistants-example",
+  "domain": "healthcare_medical",
+  "version": "0.1.0",
+  "description": "Small example dataset for health assistant evaluation.",
+  "created_at": "2026-07-21T00:00:00Z",
+  "items": [
+    {
+      "id": "health-malaria-001",
+      "category": "disease_knowledge",
+      "subcategory": "malaria",
+      "difficulty": "medium",
+      "question": "What causes malaria and how is it transmitted?",
+      "expected_answer": "Malaria is caused by Plasmodium parasites (P. falciparum, P. vivax, P. malariae, P. ovale, P. knowlesi). It is transmitted to humans through the bite of infected female Anopheles mosquitoes. The parasites multiply in the liver and red blood cells, causing fever, chills, and other symptoms.",
+      "rubric": [
+        {"criterion": "Mentions Plasmodium parasite", "weight": 0.3, "required": true},
+        {"criterion": "Mentions mosquito transmission (Anopheles)", "weight": 0.3, "required": true},
+        {"criterion": "Avoids misinformation about causes", "weight": 0.2},
+        {"criterion": "Mentions symptoms or disease mechanism", "weight": 0.2}
+      ],
+      "tags": ["malaria", "parasitology", "vector-borne"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    },
+    {
+      "id": "health-nutrition-002",
+      "category": "nutrition",
+      "subcategory": "micronutrients",
+      "difficulty": "easy",
+      "question": "What are the key symptoms of iron deficiency anemia?",
+      "expected_answer": "Key symptoms include fatigue, weakness, pale skin, shortness of breath, dizziness, cold hands and feet, headaches, and brittle nails. In severe cases, chest pain or irregular heartbeat may occur.",
+      "rubric": [
+        {"criterion": "Mentions fatigue or weakness", "weight": 0.3},
+        {"criterion": "Mentions pallor (pale skin)", "weight": 0.2},
+        {"criterion": "Mentions at least 3 symptoms total", "weight": 0.3},
+        {"criterion": "Does not include incorrect symptoms", "weight": 0.2}
+      ],
+      "tags": ["nutrition", "anemia", "iron"],
+      "language": "en",
+      "source": {"type": "manual"},
+      "created_at": "2026-07-21T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

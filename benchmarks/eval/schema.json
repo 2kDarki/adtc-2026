@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adtc.africa/schemas/eval-item.schema.json",
+  "title": "ADTC Evaluation Item",
+  "description": "Schema for a single evaluation item in an LLM benchmarking dataset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "category",
+    "difficulty",
+    "question",
+    "expected_answer",
+    "rubric",
+    "language",
+    "source",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Globally unique identifier for this evaluation item. Format: <domain>-<category>-<sequence> (e.g. coding-assistants-algorithms-001)."
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Top-level topic area (e.g. 'algorithms', 'data_structures', 'debugging')."
+    },
+    "subcategory": {
+      "type": "string",
+      "default": "",
+      "description": "Optional finer-grained classification within the category."
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard", "expert"],
+      "description": "Relative difficulty level of the question."
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The prompt or question presented to the LLM."
+    },
+    "expected_answer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference answer or expected output. May be a short answer, code snippet, or explanation."
+    },
+    "rubric": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "weight"],
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A single scoring criterion the answer should satisfy."
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Relative importance of this criterion (0-1). Weights across all criteria should sum to 1.0."
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, the answer MUST satisfy this criterion to receive any credit."
+          }
+        }
+      },
+      "description": "Scoring rubric: a list of weighted criteria for automated or manual evaluation."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Free-form tags for filtering and grouping (e.g. 'recursion', 'big-o', 'python')."
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "description": "ISO 639-1 language code of the question and answer (e.g. 'en', 'fr', 'sw')."
+    },
+    "notes": {
+      "type": "string",
+      "default": "",
+      "description": "Internal notes for dataset maintainers. Not shown to the LLM."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["manual", "document", "synthetic", "csv", "web"],
+          "description": "How this item was generated."
+        },
+        "document": {
+          "type": "string",
+          "description": "Original document name or path (if sourced from a document)."
+        },
+        "page": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Page number in the source document (if applicable)."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the source material (if sourced from the web)."
+        },
+        "publication": {
+          "type": "string",
+          "description": "Publication or book title."
+        },
+        "author": {
+          "type": "string",
+          "description": "Author of the source material."
+        },
+        "publication_date": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO 8601 date of publication (YYYY-MM-DD)."
+        }
+      },
+      "description": "Provenance metadata: where this evaluation item came from."
+    },
+    "metadata": {
+      "type": "object",
+      "default": {},
+      "description": "Extensible key-value store for domain-specific or future use. Keys must be strings; values can be any JSON type."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when this item was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last modification."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Schema version of this item. Increment on breaking changes."
+    }
+  }
+}
