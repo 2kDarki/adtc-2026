@@ -17,3 +17,6 @@ __pycache__/
 # Local profiler output
 submission.json
 audit.json
+
+# Benchmark results (stored locally, never commit)
+benchmarks/results/*/
