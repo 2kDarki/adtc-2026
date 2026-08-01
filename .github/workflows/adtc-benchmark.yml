@@ -22,7 +22,7 @@ on:
       max_tokens:
         description: "Max tokens per answer"
         required: false
-        default: "768"
+        default: "1536"
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ env:
   MODEL_FILE: ${{ github.event.inputs.model_file || 'Qwen3.5-4B-Q5_K_M.gguf' }}
   CTX_SIZE: ${{ github.event.inputs.context_length || '2048' }}
   THREADS: ${{ github.event.inputs.threads || '4' }}
-  MAX_TOKENS: ${{ github.event.inputs.max_tokens || '768' }}
+  MAX_TOKENS: ${{ github.event.inputs.max_tokens || '1536' }}
   LLAMA_BENCH: llama-cpp/llama-bench
 
 jobs:
