@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""render_report.py — builds markdown report from llama-bench JSON + system metadata.
+"""render_report.py — builds the committed markdown report.
+
+Merges llama-bench JSON (configA.json / configB.json from run_bench.sh), the
+TTFT / reasoning JSON produced by benchmark_llm.py, and system metadata into
+`benchmarks/adtc/results-<run>-<sha>.md`.
 
 Usage:
     python render_report.py <run_number> <commit_sha> <json_dir> <output_path>
-
-    json_dir should contain:
-      - qwen2.5-3b-configA.json, qwen2.5-3b-configB.json
-      - qwen2.5-coder-7b-configA.json, qwen2.5-coder-7b-configB.json
 """
 
 from __future__ import annotations
@@ -15,57 +15,16 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-# Phone data points from PocketPal AI (ARM, not architecture-comparable for speed)
-PHONE_DATA = [
-    {
-        "model": "Qwen2.5-3B-Instruct-Q4_K_M",
-        "params": "3.09B",
-        "file_size_gb": 1.92,
-        "config": "phone",
-        "threads": "N/A",
-        "context": "N/A",
-        "kv_cache": "N/A",
-        "flash_attn": "N/A",
-        "ngl": "N/A",
-        "pp_ts": 19.34,
-        "tg_ts": 4.51,
-        "peak_rss_mb": 2630,
-        "source": "PocketPal AI, ARM",
-    },
-    {
-        "model": "Qwen2.5-Coder-7B-Instruct-Q4_K_M",
-        "params": "7.62B",
-        "file_size_gb": 4.68,
-        "config": "phone",
-        "threads": "N/A",
-        "context": "N/A",
-        "kv_cache": "N/A",
-        "flash_attn": "N/A",
-        "ngl": "N/A",
-        "pp_ts": 2.77,
-        "tg_ts": 0.78,
-        "peak_rss_mb": 5130,
-        "source": "PocketPal AI, ARM",
-    },
-]
+SEFF_CEILING_MB = 7168
 
-MODEL_MAP = {
-    "qwen2.5-3b": {
-        "display": "Qwen2.5-3B-Instruct-Q4_K_M",
-        "params": "3.09B",
-        "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
-        "file": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
-    },
-    "qwen2.5-coder-7b": {
-        "display": "Qwen2.5-Coder-7B-Instruct-Q4_K_M",
-        "params": "7.62B",
-        "repo": "bartowski/Qwen2.5-Coder-7B-Instruct-GGUF",
-        "file": "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf",
-    },
-}
 
-RAM_LIMIT_MB = 7168  # 7 GB ceiling for Seff scoring
+def read_json(path: Path) -> dict[str, Any] | None:
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, FileNotFoundError, KeyError):
+        return None
 
 
 def parse_bench_json(data: dict) -> dict:
@@ -84,11 +43,13 @@ def parse_bench_json(data: dict) -> dict:
     return {"pp_ts": round(pp_rate, 2), "tg_ts": round(tg_rate, 2)}
 
 
-def peak_rss_mb_from_bench(data: dict) -> float | None:
-    """Try to extract peak RSS from bench output if available."""
-    # llama-bench JSON rows may contain peak_mem or similar fields
-    # For now return None — profiler audit captures this separately
-    return None
+def short(text: str, limit: int = 50) -> str:
+    text = " ".join(text.split())
+    return text[:limit] + ("..." if len(text) > limit else "")
+
+
+def fmt(v: Any, default: str = "N/A") -> str:
+    return default if v is None else str(v)
 
 
 def main() -> None:
@@ -100,77 +61,48 @@ def main() -> None:
     commit_sha = sys.argv[2][:7]
     json_dir = Path(sys.argv[3])
     output_path = Path(sys.argv[4])
-
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    # Read system metadata from first available JSON
-    system_info = {}
-    for f in sorted(json_dir.glob("*.json")):
-        try:
-            data = json.loads(f.read_text())
-            system_info = data.get("system", {})
-            break
-        except (json.JSONDecodeError, KeyError):
+    ttft_data = read_json(json_dir / "ttft-results.json")
+    if ttft_data is None:
+        print("error: ttft-results.json missing or invalid in %s" % json_dir, file=sys.stderr)
+        sys.exit(1)
+
+    system = ttft_data.get("system", {}) or {}
+    model = ttft_data.get("model", {}) or {}
+    memory = ttft_data.get("memory", {}) or {}
+    summary = ttft_data.get("summary", {}) or {}
+    questions = ttft_data.get("questions", []) or []
+
+    config_rows = []
+    for cfg in ("A", "B"):
+        data = read_json(json_dir / f"config{cfg}.json")
+        if data is None:
             continue
-
-    # Build table rows
-    rows = []
-
-    # Runner results
-    for model_key, model_info in MODEL_MAP.items():
-        for config in ("A", "B"):
-            fname = f"{model_key}-config{config}.json"
-            fpath = json_dir / fname
-            if not fpath.exists():
-                continue
-            data = json.loads(fpath.read_text())
-            rates = parse_bench_json(data)
-            rss = peak_rss_mb_from_bench(data)
-            cache_label = f"{data.get('cache_type_k', '?')}/{data.get('cache_type_v', '?')}"
-            fa_label = data.get("flash_attn", "?")
-            rss_pct = f"{rss / RAM_LIMIT_MB * 100:.1f}%" if rss else "N/A"
-            rows.append({
-                "model": model_info["display"],
-                "params": model_info["params"],
-                "file_size_gb": f"{data.get('file_size_gb', 0):.2f}" if "file_size_gb" in data else "N/A",
-                "config": config,
+        rates = parse_bench_json(data)
+        config_rows.append(
+            {
+                "config": cfg,
                 "threads": data.get("threads", "?"),
-                "context": data.get("n_prompt", 512),
-                "kv_cache": cache_label,
-                "flash_attn": fa_label,
-                "ngl": data.get("n_gpu_layers", 0),
+                "context": data.get("n_prompt", "?"),
+                "kv_cache": f"{data.get('cache_type_k', '?')}/{data.get('cache_type_v', '?')}",
+                "flash_attn": data.get("flash_attn", "?"),
+                "ngl": data.get("n_gpu_layers", "?"),
                 "pp_ts": rates["pp_ts"],
                 "tg_ts": rates["tg_ts"],
-                "peak_rss_mb": rss if rss else "N/A",
-                "peak_rss_pct": rss_pct,
-                "source": "runner",
-            })
+                "file_size_gb": data.get("file_size_gb", "N/A"),
+            }
+        )
 
-    # Phone reference rows
-    for phone in PHONE_DATA:
-        rss_pct = f"{phone['peak_rss_mb'] / RAM_LIMIT_MB * 100:.1f}%"
-        rows.append({
-            "model": phone["model"],
-            "params": phone["params"],
-            "file_size_gb": f"{phone['file_size_gb']:.2f}",
-            "config": phone["config"],
-            "threads": phone["threads"],
-            "context": phone["context"],
-            "kv_cache": phone["kv_cache"],
-            "flash_attn": phone["flash_attn"],
-            "ngl": phone["ngl"],
-            "pp_ts": phone["pp_ts"],
-            "tg_ts": phone["tg_ts"],
-            "peak_rss_mb": phone["peak_rss_mb"],
-            "peak_rss_pct": f"{rss_pct}",
-            "source": phone["source"],
-        })
-
-    # Render markdown
-    cpu = system_info.get("cpu_model", "unknown")
-    vcpus = system_info.get("vcpus", "unknown")
-    ram = system_info.get("total_ram_mb", "unknown")
-    kernel = system_info.get("kernel", "unknown")
+    peak_rss = memory.get("server_peak_rss_mb")
+    peak_pct = f"{peak_rss / SEFF_CEILING_MB * 100:.1f}%" if peak_rss else "N/A"
+    if peak_rss is None:
+        verdict = "UNKNOWN (peak RSS not sampled)"
+    elif peak_rss > SEFF_CEILING_MB:
+        verdict = f"FAIL — peak RSS {peak_rss:.0f} MB exceeds {SEFF_CEILING_MB} MB ceiling"
+    else:
+        verdict = f"PASS — peak RSS {peak_rss:.0f} MB fits within {SEFF_CEILING_MB} MB ceiling"
+    enforced = system.get("container_mem_limit_mb")
 
     lines = [
         f"# ADTC Benchmark Report — Run {run_number}",
@@ -178,37 +110,116 @@ def main() -> None:
         f"- **Run**: #{run_number}",
         f"- **Commit**: `{commit_sha}`",
         f"- **Timestamp**: {now}",
-        f"- **Runner CPU**: {cpu}",
-        f"- **vCPUs**: {vcpus}",
-        f"- **Total RAM**: {ram} MB ({ram} / {RAM_LIMIT_MB} MB ceiling)",
-        f"- **Kernel**: {kernel}",
+        f"- **Model**: `{model.get('name', 'unknown')}`",
+        f"- **Model repo**: {model.get('repo', 'N/A')}",
+        f"- **Model file**: {fmt(model.get('file_size_gb'))} GB",
+        f"- **llama.cpp**: {fmt(model.get('server_version'), 'N/A')}",
+        f"- **Runner CPU**: {fmt(system.get('cpu_model'), 'unknown')}",
+        f"- **vCPUs**: {fmt(system.get('vcpus'), 'unknown')}",
+        f"- **Total RAM**: {fmt(system.get('total_ram_mb'), 'unknown')} MB",
+        f"- **Container RAM ceiling**: {fmt(enforced, 'unlimited')} MB",
         "",
-        "## Results",
-        "",
-        "| Model | Params | File GB | Config | Threads | Context | KV Cache | Flash Attn | GPU Layers | PP t/s | TG t/s | Peak RSS (MB) | Peak RSS (% of 7168 MB) | Source |",
-        "|-------|--------|---------|--------|---------|---------|----------|------------|------------|--------|--------|---------------|--------------------------|--------|",
     ]
 
-    for r in rows:
-        lines.append(
-            f"| {r['model']} | {r['params']} | {r['file_size_gb']} | {r['config']} "
-            f"| {r['threads']} | {r['context']} | {r['kv_cache']} | {r['flash_attn']} "
-            f"| {r['ngl']} | {r['pp_ts']} | {r['tg_ts']} | {r['peak_rss_mb']} "
-            f"| {r['peak_rss_pct']} | {r['source']} |"
-        )
+    if config_rows:
+        lines += [
+            "## llama-bench (synthetic harness)",
+            "",
+            "| Config | Threads | Context | KV Cache | Flash Attn | GPU Layers | PP t/s | TG t/s | File GB |",
+            "|--------|---------|---------|----------|------------|------------|--------|--------|----------|",
+        ]
+        for r in config_rows:
+            lines.append(
+                f"| {r['config']} | {r['threads']} | {r['context']} | {r['kv_cache']} | {r['flash_attn']} "
+                f"| {r['ngl']} | {r['pp_ts']} | {r['tg_ts']} | {r['file_size_gb']} |"
+            )
+        lines.append("")
 
     lines += [
+        "## TTFT & Decode Speed (live generation)",
         "",
-        "## Notes",
+        "| Question | Category | TTFT (s) | Decode (t/s) | Tokens | Answer |",
+        "|----------|----------|----------|--------------|--------|--------|",
+    ]
+    for q in questions:
+        answer = short(q.get("answer") or q.get("thinking") or "(no output)", 48)
+        if q.get("error"):
+            answer = f"ERROR: {q['error'][:48]}"
+        lines.append(
+            f"| {q.get('id', '?')} | {q.get('category', '?')} | {fmt(q.get('ttft_sec'))} "
+            f"| {fmt(q.get('decode_tps'))} | {q.get('tokens', 0)} | {answer} |"
+        )
+    lines.append(
+        f"| **Average** | | {fmt(summary.get('avg_ttft_sec'))} | {fmt(summary.get('avg_decode_tps'))} "
+        f"| {summary.get('total_generated_tokens', 0)} total | |"
+    )
+    lines += [
         "",
-        "- The runner environment is x86_64 Linux but **not identical** CPU generation to the audit target",
-        "  (Intel i5 10th-12th gen). Runner CPUs may differ in microarchitecture, cache sizes, and AVX support.",
-        "- **Sperf** in the actual competition is scored relative to other teams' submissions, not against",
-        "  these numbers directly. This report is a memory/sanity check and a rough speed baseline,",
-        "  not a score prediction.",
-        "- **Seff** is absolute against the 7168 MB ceiling — flagged in the Peak RSS column.",
-        "- Phone data points (source: PocketPal AI, ARM) are **not architecture-comparable for speed**",
-        "  but included for memory reference continuity.",
+        f"Questions answered: {summary.get('questions_ok', 0)}/{summary.get('questions_total', 0)}. "
+        f"Total generation time: {fmt(summary.get('total_elapsed_sec'))} s.",
+        "",
+        "## Memory — 8 GB laptop profile",
+        "",
+        "| Metric | Value |",
+        "|--------|-------|",
+        f"| Model file size | {fmt(model.get('file_size_gb'))} GB |",
+        f"| Server peak RSS (VmHWM) | {fmt(peak_rss, 'N/A')} MB |",
+        f"| Seff ceiling | {SEFF_CEILING_MB} MB |",
+        f"| Peak RSS % of Seff ceiling | {peak_pct} |",
+        f"| Container enforced limit | {fmt(enforced, 'unlimited')} MB |",
+        f"| **Verdict** | **{verdict}** |",
+        "",
+        "## Reasoning outputs",
+        "",
+    ]
+    for i, q in enumerate(questions, start=1):
+        lines += [
+            f"### {i}. {q.get('id', '?')} — {q.get('category', '?')}",
+            "",
+            f"**Prompt:** {q['prompt']}",
+            "",
+        ]
+        if q.get("reference"):
+            lines += [f"**Reference:** {q['reference']}", ""]
+        if q.get("error"):
+            lines += [f"**ERROR:** {q['error']}", ""]
+        if q.get("thinking"):
+            lines += [
+                "**Thinking:**",
+                "",
+                "```text",
+                q["thinking"],
+                "```",
+                "",
+            ]
+        lines += [
+            "**Answer:**",
+            "",
+            "```text",
+            q.get("answer") or "(no output)",
+            "```",
+            "",
+            f"_TTFT {fmt(q.get('ttft_sec'))} s · decode {fmt(q.get('decode_tps'))} t/s · "
+            f"{q.get('tokens', 0)} tokens · total {fmt(q.get('total_sec'))} s"
+            + (" · truncated" if q.get("truncated") else "")
+            + "_\n",
+        ]
+
+    lines += [
+        "## Notes & Caveats",
+        "",
+        "- The runner environment is x86_64 Linux but **not identical** to the audit target",
+        "  (Intel i5 10th-12th gen). Runner CPUs may differ in microarchitecture, cache sizes,",
+        "  and AVX support, so generation speeds (t/s) will vary by ±10-15% across runs.",
+        "- The job runs inside a container capped at 4 vCPUs and 8 GB RAM with **no swap**",
+        "  (an OOM kill instead of swapping), matching the budget-laptop profile.",
+        "- **Seff** is absolute against the 7168 MB ceiling — see the memory section above.",
+        "- TTFT is measured to the first generated token, including the start of a",
+        "  `<think>` block when the model's thinking mode is active.",
+        "- Peak RSS is sampled from `/proc/<pid>/status` (VmHWM). Memory mapped with mmap",
+        "  may also sit in the page cache, which is not counted in VmHWM.",
+        "- Decode speed includes any thinking tokens. Thread count is fixed at 4 to match",
+        "  the 4 vCPU laptop profile.",
         "",
     ]
 

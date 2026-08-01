@@ -14,7 +14,7 @@ MODEL_PATH="${1:?usage: run_bench.sh <model_path> <config> <output_path>}"
 CONFIG="${2:?usage: run_bench.sh <model_path> <config> <output_path>}"
 OUTPUT_PATH="${3:?usage: run_bench.sh <model_path> <config> <output_path>}"
 
-THREADS="$(nproc)"
+THREADS="${THREADS:-$(nproc)}"
 
 # Config A: phone-parity (f16 cache, flash-attn off)
 # Config B: submission-intended (q8_0 cache, flash-attn on)

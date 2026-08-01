@@ -3,175 +3,161 @@ name: ADTC Benchmark
 on:
   workflow_dispatch:
     inputs:
+      model_repo:
+        description: "Hugging Face repo holding the GGUF"
+        required: false
+        default: "unsloth/Qwen3.5-4B-GGUF"
+      model_file:
+        description: "GGUF file name"
+        required: false
+        default: "Qwen3.5-4B-Q5_K_M.gguf"
       context_length:
-        description: "Context length for benchmarks"
+        description: "Context length (tokens)"
         required: false
         default: "2048"
       threads:
-        description: "Thread count (empty = auto-detect via nproc)"
+        description: "CPU threads (laptop profile = 4 vCPU)"
         required: false
-        default: ""
+        default: "4"
+      max_tokens:
+        description: "Max tokens per answer"
+        required: false
+        default: "768"
 
 permissions:
   contents: write
 
+env:
+  LLAMA_CPP_TAG: b10217
+  MODEL_REPO: ${{ github.event.inputs.model_repo || 'unsloth/Qwen3.5-4B-GGUF' }}
+  MODEL_FILE: ${{ github.event.inputs.model_file || 'Qwen3.5-4B-Q5_K_M.gguf' }}
+  CTX_SIZE: ${{ github.event.inputs.context_length || '2048' }}
+  THREADS: ${{ github.event.inputs.threads || '4' }}
+  MAX_TOKENS: ${{ github.event.inputs.max_tokens || '768' }}
+  LLAMA_BENCH: llama-cpp/llama-bench
+
 jobs:
   bench:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        model:
-          - name: qwen2.5-3b
-            repo: bartowski/Qwen2.5-3B-Instruct-GGUF
-            file: Qwen2.5-3B-Instruct-Q4_K_M.gguf
-            params: "3.09B"
-            display: Qwen2.5-3B-Instruct-Q4_K_M
-          - name: qwen2.5-coder-7b
-            repo: bartowski/Qwen2.5-Coder-7B-Instruct-GGUF
-            file: Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf
-            params: "7.62B"
-            display: Qwen2.5-Coder-7B-Instruct-Q4_K_M
+    timeout-minutes: 60
+    container:
+      image: ubuntu:22.04
+      options: "--cpus=4 --memory=8g --memory-swap=8g"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check disk space
+      - name: Install base tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends curl ca-certificates
+
+      - name: Free disk space
         run: |
           echo "=== Disk space before cleanup ==="
           df -h /
-          FREE_KB=$(df --output=avail / | tail -1)
-          FREE_GB=$((FREE_KB / 1024 / 1024))
-          if [ "$FREE_GB" -lt 8 ]; then
-            echo "Low disk space (${FREE_GB}GB free), cleaning up..."
-            sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
-              /usr/local/share/boost /usr/local/lib/julia || true
-            df -h /
-          else
-            echo "Disk space OK: ${FREE_GB}GB free"
-          fi
+          rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/boost /usr/local/lib/julia || true
+          df -h /
+
+      - name: Cache llama.cpp binaries
+        id: llama-cache
+        uses: actions/cache@v4
+        with:
+          path: llama-cpp
+          key: llama-${{ env.LLAMA_CPP_TAG }}-ubuntu-x64
+
+      - name: Download llama.cpp binaries
+        if: steps.llama-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L --fail -o llama.tar.gz \
+            "https://github.com/ggml-org/llama.cpp/releases/download/${{ env.LLAMA_CPP_TAG }}/llama-${{ env.LLAMA_CPP_TAG }}-bin-ubuntu-x64.tar.gz"
+          mkdir -p llama-cpp
+          tar xzf llama.tar.gz -C llama-cpp --strip-components=1
+          rm llama.tar.gz
+          chmod +x llama-cpp/llama-server llama-cpp/llama-bench
+          echo "llama-server version:"
+          ./llama-cpp/llama-server --version || true
 
       - name: Cache GGUF model
-        uses: actions/cache@v4
         id: model-cache
-        with:
-          path: models/${{ matrix.model.file }}
-          key: gguf-${{ matrix.model.repo }}-${{ matrix.model.file }}
-
-      - name: Cache llama-bench binary
         uses: actions/cache@v4
-        id: bench-cache
         with:
-          path: llama-bench/
-          key: llama-bench-b10076-ubuntu-x64
-
-      - name: Download llama-bench
-        if: steps.bench-cache.outputs.cache-hit != 'true'
-        run: |
-          curl -L --fail -o llama-bench.tar.gz \
-            "https://github.com/ggml-org/llama.cpp/releases/download/b10076/llama-b10076-bin-ubuntu-x64.tar.gz"
-          mkdir -p llama-bench
-          tar xzf llama-bench.tar.gz -C llama-bench --strip-components=1
-          rm llama-bench.tar.gz
-          chmod +x llama-bench/llama-bench
-          echo "llama-bench version:"
-          ./llama-bench/llama-bench --version || true
-
-      - name: Add llama-bench to PATH
-        run: echo "$(pwd)/llama-bench" >> "$GITHUB_PATH"
+          path: models/${{ env.MODEL_FILE }}
+          key: gguf-${{ env.MODEL_REPO }}-${{ env.MODEL_FILE }}
 
       - name: Download model
         if: steps.model-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p models
-          curl -L --fail --progress-bar -o "models/${{ matrix.model.file }}" \
-            "https://huggingface.co/${{ matrix.model.repo }}/resolve/main/${{ matrix.model.file }}"
-
-      - name: Install adtc-profiler
-        run: |
-          pip install --break-system-packages \
-            "git+https://github.com/Africa-Deep-Tech-Foundation/adtc-profiler.git"
+          curl -L --fail --progress-bar \
+            -o "models/${{ env.MODEL_FILE }}" \
+            "https://huggingface.co/${{ env.MODEL_REPO }}/resolve/main/${{ env.MODEL_FILE }}"
 
       - name: Capture system metadata
         id: sysmeta
         run: |
           echo "vcpus=$(nproc)" >> "$GITHUB_OUTPUT"
-          echo "ram_mb=$(free -m | awk '/^Mem:/{print $2}')" >> "$GITHUB_OUTPUT"
+          echo "ram_mb=$(awk '/^MemTotal/ {print $2}' /proc/meminfo)" >> "$GITHUB_OUTPUT"
+          echo "mem_limit_mb=$(( $(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo 8589934592) / 1024 / 1024 ))" >> "$GITHUB_OUTPUT"
+          echo "cpu_model=$(lscpu | awk -F: '/Model name/ {gsub(/^[ \t]+/, "", $2); print $2}')" >> "$GITHUB_OUTPUT"
           lscpu | tee /tmp/lscpu.txt
           uname -a | tee /tmp/uname.txt
+          echo "model_file_bytes=$(stat -c%s "models/${{ env.MODEL_FILE }}")" >> "$GITHUB_OUTPUT"
 
       - name: Run llama-bench Config A (phone-parity)
         run: |
           mkdir -p bench-results
-          bash benchmarks/adtc/scripts/run_bench.sh \
-            "models/${{ matrix.model.file }}" \
-            A \
-            "bench-results/${{ matrix.model.name }}-configA.json"
+          THREADS="${{ env.THREADS }}" bash benchmarks/adtc/scripts/run_bench.sh \
+            "models/${{ env.MODEL_FILE }}" A "bench-results/configA.json"
 
       - name: Run llama-bench Config B (submission-intended)
         run: |
-          bash benchmarks/adtc/scripts/run_bench.sh \
-            "models/${{ matrix.model.file }}" \
-            B \
-            "bench-results/${{ matrix.model.name }}-configB.json"
+          THREADS="${{ env.THREADS }}" bash benchmarks/adtc/scripts/run_bench.sh \
+            "models/${{ env.MODEL_FILE }}" B "bench-results/configB.json"
 
-      - name: Run adtc-profiler audit
+      - name: Run TTFT / reasoning benchmark (llama-server)
         run: |
-          mkdir -p submission-dir
-          cp models/${{ matrix.model.file }} submission-dir/model.gguf
-          cat > submission-dir/metadata.json << 'METAEOF'
-          {
-            "team_id": "adtc-2026",
-            "domain": "coding_assistants",
-            "language_scope": ["en"],
-            "african_alpha_claim": false,
-            "budget_laptop_claim": true,
-            "submitter": {
-              "name": "ADTC Team",
-              "email": "team@adtc.africa",
-              "github_handle": "africa-deep-tech-foundation"
-            },
-            "cross_disciplinary_pairing": {
-              "discipline": "education",
-              "load_bearing": true,
-              "description": "LLM benchmarks for ADTC competition"
-            },
-            "test_prompts": [
-              {"prompt_id": "tp_001", "prompt": "Write a Python function that reads a CSV file and returns the column with the highest mean value."},
-              {"prompt_id": "tp_002", "prompt": "Explain the difference between a list and a tuple in Python, and give one example where each is the better choice."}
-            ],
-            "model": {
-              "name": "${{ matrix.model.display }}",
-              "runtime": "llama.cpp",
-              "quantization": "GGUF Q4_K_M",
-              "parameters_estimate": "${{ matrix.model.params }}",
-              "packaging": "binary_bundle"
-            },
-            "_runtime": {
-              "model_path": "model.gguf"
-            }
-          }
-          METAEOF
-          adtc-profiler run \
-            --submission submission-dir \
-            --mode audit \
-            --output "bench-results/${{ matrix.model.name }}-audit.json" \
-            --skip-accuracy
+          python3 benchmarks/adtc/scripts/benchmark_llm.py \
+            --model "models/${{ env.MODEL_FILE }}" \
+            --server-bin llama-cpp/llama-server \
+            --server-version "${{ env.LLAMA_CPP_TAG }}" \
+            --model-name "${{ env.MODEL_FILE }}" \
+            --model-repo "${{ env.MODEL_REPO }}" \
+            --output bench-results/ttft-results.json \
+            --ctx "${{ env.CTX_SIZE }}" \
+            --threads "${{ env.THREADS }}" \
+            --max-tokens "${{ env.MAX_TOKENS }}"
 
-      - name: Add file size to results JSON
+      - name: Add model file size to results
         run: |
-          FILE_SIZE=$(stat -c%s "models/${{ matrix.model.file }}" 2>/dev/null || echo 0)
-          FILE_SIZE_GB=$(echo "scale=2; $FILE_SIZE / 1073741824" | bc)
-          for f in bench-results/${{ matrix.model.name }}-config*.json; do
-            python3 -c "import json,sys; d=json.loads(open(sys.argv[1]).read()); d['file_size_gb']=float(sys.argv[2]); open(sys.argv[1],'w').write(json.dumps(d,indent=2))" "$f" "$FILE_SIZE_GB"
-          done
+          export MODEL_FILE="${{ env.MODEL_FILE }}"
+          python3 - <<'PY'
+          import json
+          import os
+
+          size = os.path.getsize(f"models/{os.environ['MODEL_FILE']}")
+          size_gb = round(size / 1073741824, 2)
+          for name in ("configA", "configB"):
+              path = f"bench-results/{name}.json"
+              with open(path) as fh:
+                  data = json.load(fh)
+              data["file_size_gb"] = size_gb
+              with open(path, "w") as fh:
+                  json.dump(data, fh, indent=2)
+          with open("bench-results/ttft-results.json") as fh:
+              data = json.load(fh)
+          data["model"]["file_size_gb"] = size_gb
+          with open("bench-results/ttft-results.json", "w") as fh:
+              json.dump(data, fh, indent=2)
+          print(f"file_size_gb={size_gb}")
+          PY
 
       - name: Upload raw artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bench-${{ matrix.model.name }}
+          name: bench-results
           path: bench-results/
 
   report:
@@ -182,12 +168,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: Download raw results
         uses: actions/download-artifact@v4
         with:
+          name: bench-results
           path: all-results/
-          pattern: bench-*
-          merge-multiple: true
 
       - name: Render report
         run: |
@@ -206,5 +191,5 @@ jobs:
           git add benchmarks/adtc/
           SHORT_SHA="${GITHUB_SHA::7}"
           RUN_NUM="${GITHUB_RUN_NUMBER}"
-          git commit -m "Add ADTC benchmark report (run ${RUN_NUM}) [skip ci]"
+          git commit -m "Add ADTC benchmark report (run ${RUN_NUM}) [skip ci]" || echo "nothing to commit"
           git push
