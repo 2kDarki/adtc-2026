@@ -9,6 +9,14 @@
     "email": "your-email@domain.com",
     "github_handle": "your-github"
   },
+  "contributors": [
+    {
+      "name": "Simon Nungwa",
+      "email": "simonnungwa99@gmail.com",
+      "github_handle": "Laplace0xx",
+      "role": "Developer"
+    }
+  ],
   "cross_disciplinary_pairing": {
     "discipline": "education",
     "load_bearing": true,
