@@ -5,9 +5,9 @@
   "african_alpha_claim": false,
   "budget_laptop_claim": true,
   "submitter": {
-    "name": "your-name",
-    "email": "your-email@domain.com",
-    "github_handle": "your-github"
+    "name": "Caleb Sibanda",
+    "email": "darkian.dev@gmail.com",
+    "github_handle": "2kDarki"
   },
   "contributors": [
     {
@@ -15,7 +15,13 @@
       "email": "simonnungwa99@gmail.com",
       "github_handle": "Laplace0xx",
       "role": "Developer"
-    }
+    },
+    {
+      "name": "Caleb Sibanda",
+      "email": "darkian.dev@gmail.com",
+      "github_handle": "2kDarki",
+      "role": "Developer"
+    },
   ],
   "cross_disciplinary_pairing": {
     "discipline": "education",
